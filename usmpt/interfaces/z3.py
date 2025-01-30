@@ -71,17 +71,8 @@ class Z3(Solver):
             Queue of solver pids.
         """
         # Solver
-        if name == 'nt':
-            process = ['z3.exe', '-in']
-        else:
-            process = ['z3', '-in']
-        if timeout:
-            process.append('-T:{}'.format(timeout))
-        self.solver: Popen = Popen(' '.join(process), stdin=PIPE, stdout=PIPE, shell=True)
-
-        if solver_pids is not None:
-            solver_pids.put(self.solver.pid)
-
+        self.solver = None
+ 
         # Flags
         self.aborted: bool = False
         self.debug: bool = debug
@@ -89,15 +80,12 @@ class Z3(Solver):
     def kill(self) -> None:
         """" Kill the process.
         """
-        self.solver.kill()
+        pass
 
     def abort(self) -> None:
         """ Abort the solver.
         """
-        warning("z3 process has been aborted")
-        self.solver.kill()
-        self.aborted = True
-        exit()
+        pass
 
     def write(self, input: str, debug: bool = False) -> None:
         """ Write instructions to the standard input.
@@ -109,28 +97,12 @@ class Z3(Solver):
         debug : bool
             Debugging flag.
         """
-        if self.debug or debug:
-            print(input)
-
-        if input != "":
-            try:
-                if self.solver.stdin is None:
-                    self.abort()
-                else:
-                    self.solver.stdin.write(bytes(input, 'utf-8'))
-            except BrokenPipeError:
-                self.abort()
-
+        print(input)
+        
     def flush(self) -> None:
         """ Flush the standard input.
         """
-        try:
-            if self.solver.stdin is None:
-                self.abort()
-            else:
-                self.solver.stdin.flush()
-        except BrokenPipeError:
-            self.abort()
+        pass
 
     def readline(self, debug: bool = False):
         """ Read a line from the standard output.
@@ -145,18 +117,7 @@ class Z3(Solver):
         str
             Line read.
         """
-        try:
-            if self.solver.stdout is None:
-                self.abort()
-            else:
-                smt_output = self.solver.stdout.readline().decode('utf-8').strip()
-        except BrokenPipeError:
-            self.abort()
-
-        if self.debug or debug:
-            print(smt_output)
-
-        return smt_output
+        pass
 
     def reset(self) -> None:
         """ Reset.
@@ -165,7 +126,7 @@ class Z3(Solver):
         ----
         Erase all assertions and declarations.
         """
-        self.write("(reset)\n")
+        print("(reset)")
 
     def push(self):
         """ Push.
@@ -174,7 +135,7 @@ class Z3(Solver):
         ----
         Creates a new scope by saving the current stack size.
         """
-        self.write("(push)\n")
+        print("(push)")
 
     def pop(self) -> None:
         """ Pop.
@@ -183,7 +144,7 @@ class Z3(Solver):
         ----
         Removes any assertion or declaration performed between it and the last push.
         """
-        self.write("(pop)\n")
+        print("(pop)")
 
     def check_sat(self, no_check: bool = False) -> Optional[bool]:
         """ Check the satisfiability of the current stack of z3.
@@ -202,7 +163,7 @@ class Z3(Solver):
         self.flush()
 
         sat = self.readline()
-
+    
         if sat == 'sat':
             return True
         elif sat == 'unsat':
@@ -211,3 +172,4 @@ class Z3(Solver):
             self.abort()
 
         return None
+

@@ -100,5 +100,50 @@ class Induction(AbstractChecker):
         bool, optional
             `True` if the formula is inductive, `None` otherwise.
         """
-        raise NotImplementedError
+        info("[BMC] > Push")
+        self.solver.push()
+        info("[BMC] > Declaration of the places from the Petri net (iteration: 0)")
+        self.solver.write(self.ptnet.smtlib_declare_places(0))
+        info("[BMC] > Initial marking of the Petri net")
+        self.solver.write(self.ptnet.smtlib_set_initial_marking(0))
+        info("[BMC] > Formula to check the satisfiability (iteration: 0)")
+        self.solver.write(self.formula.smtlib(0, assertion=True))
+
+
+        if self.solver.check_sat():
+            self.solver.pop()
+            return True
+
+        info("[BMC] > Pop")
+        self.solver.pop()
+
+        info("[BMC] > Push")
+        self.solver.push()
+
+        info("[BMC] > Declaration of the places from the Petri net (iteration: {})".format(0))
+        self.solver.write(self.ptnet.smtlib_declare_places(0))
+
+        info("[BMC] > Declaration of the places from the Petri net (iteration: {})".format(1))
+        self.solver.write(self.ptnet.smtlib_declare_places(1))
+
+        info("[BMC] > Formula to check the satisfiability (iteration: {})".format(0))
+        self.solver.write(self.formula.smtlib(0, assertion=True, negation=True))
+
+        info("[BMC] > Transition relation: {} -> {}".format(0, 1))
+        self.solver.write(self.ptnet.smtlib_transition_relation(0,1))
+
+        info("[BMC] > Formula to check the satisfiability (iteration: {})".format(1))
+        self.solver.write(self.formula.smtlib(1, assertion=True))
+
+        induction_step_sat = self.solver.check_sat()
+
+        info("[BMC] > Pop")
+        self.solver.pop()
+        
+        if induction_step_sat:
+
+            return None  
+        else:  
+            return False
+        
     ######################

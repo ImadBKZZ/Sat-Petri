@@ -171,7 +171,7 @@ class PetriNet:
         str
             SMT-LIB format.
         """
-        smt_input = ""
+        smt_input = "Initial Marking\n"
 
         for pl , tok in self.initial_marking.items():
             var = pl if k is None else "{}@{}".format(pl, k)
@@ -197,22 +197,27 @@ class PetriNet:
             SMT-LIB format.
         """
     
-        smt_input=""
+
+        smt_input = "Transition Relations\n"
+
         for t in self.transitions:
-            enbl=[]
+          
+            enbl_conditions = []
             for pl, w in self.pre[t].items():
-                enbl.append("(assert( and ( >= {}@{} {}))\n".format(pl,k,w))
-            delta=[]
-            plus=[]
-            moins=[]
+                enbl_conditions.append(f"(>= {pl}@{k} {w})")
+            enbl_condition = f"(and {' '.join(enbl_conditions)})"
+
+            delta_conditions = []
             for pl in self.places:
-                pre=self.pre[t].get(pl,0)
-                post=self.post[t].get(pl,0)
-                plus.append("(assert ( = {}@{} (- {}@{}) )")
-                
-                
-                
-            enbl=
+                pre = self.pre[t].get(pl, 0)
+                post = self.post[t].get(pl, 0)
+                delta_conditions.append(
+                    f"(= {pl}@{k_prime} (- (+ {pl}@{k} {post}) {pre}))"
+                )
+            delta_condition = f"(and {' '.join(delta_conditions)})"
+
+           
+            smt_input += f"(assert (=> {enbl_condition} {delta_condition}))\n"
 
         return smt_input
     ######################

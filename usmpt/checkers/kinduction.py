@@ -122,5 +122,26 @@ class KInduction(AbstractChecker):
         int
             Iteration number of the unsat query.
         """
-        raise NotImplementedError
-    ######################
+        k = 0
+
+        while not self.solver.check_sat():
+
+            info("[BMC] > Pop")
+            self.solver.pop()
+
+            k += 1
+            info("[BMC] > k = {}".format(k))
+
+            info("[BMC] > Declaration of the places from the Petri net (iteration: {})".format(k))
+            self.solver.write(self.ptnet.smtlib_declare_places(k))
+
+            info("[BMC] > Transition relation: {} -> {}".format(k - 1, k))
+            self.solver.write(self.ptnet.smtlib_transition_relation(k - 1, k))
+
+            info("[BMC] > Push")
+            self.solver.push()
+
+            info("[BMC] > Formula to check the satisfiability (iteration: {})".format(k))
+            self.solver.write(self.formula.smtlib(k, assertion=True))
+
+        return k
